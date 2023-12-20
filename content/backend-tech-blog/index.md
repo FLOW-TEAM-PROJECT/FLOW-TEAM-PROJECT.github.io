@@ -6,6 +6,4 @@ author: 유희진
 tags: Backend
 categories: Backend
 ---
-블로그 글을 처음 써보네요.
-자동화 배포가 가능한지 테스트 해봤습니다.
-과연?
+블로그 페이지 자동화 배포 테스트
