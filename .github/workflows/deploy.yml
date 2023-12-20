@@ -34,4 +34,4 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm install
       - name: Deploy npm
-        run: npm deploy
+        run: npm run deploy
