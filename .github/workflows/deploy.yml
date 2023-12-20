@@ -33,5 +33,9 @@ jobs:
       - name: Install node module
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm install
+      - name: Set up Git identity
+        run: |
+          git config --global user.name ${{ secrets.NAME }}
+          git config --global user.email ${{ secrets.EMAIL }}
       - name: Deploy npm
         run: npm run deploy
