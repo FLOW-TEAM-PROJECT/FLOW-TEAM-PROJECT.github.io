@@ -11,14 +11,14 @@ module.exports = {
   },
   ga: '0', // Google Analytics Tracking ID
   author: {
-    name: `TEAM FLOW`,
+    name: `FLOW`,
     bio: {
-      role: `개발자`,
-      description: ['사람에 가치를 두는', '능동적으로 일하는', '이로운 것을 만드는'],
+      role: `Team`,
+      description: ['개발계에 새로운 Flow를 일으킬'],
       thumbnail: 'sample.png', // Path to the image in the 'asset' folder
     },
     social: {
-      github: ``, // `https://github.com/zoomKoding`,
+      github: `https://github.com/FLOW-TEAM-PROJECT`, // `https://github.com/zoomKoding`,
       linkedIn: ``, // `https://www.linkedin.com/in/jinhyeok-jeong-800871192`,
       email: ``, // `zoomkoding@gmail.com`,
     },
@@ -42,6 +42,17 @@ module.exports = {
       },
       // ========================================================
       // ========================================================
+      {
+        date: '2023.12.20 ~',
+        activity: '팀 프로젝트 개발 과정을 기록합니다.',
+        links: {
+          github: 'https://github.com/FLOW-TEAM-PROJECT',
+          post: '',
+          googlePlay: '',
+          appStore: '',
+          demo: '',
+        },
+      },
     ],
 
     projects: [
@@ -62,6 +73,19 @@ module.exports = {
       },
       // ========================================================
       // ========================================================
+      {
+        title: 'FLOW Backend',
+        description: '개발자들을 위한 한국판 StackOverflow 커뮤니티 Backend 서버',
+        techStack: ['Spring Boot', 'Java'],
+        thumbnailUrl: '',
+        links: {
+          post: '',
+          github: 'https://github.com/FLOW-TEAM-PROJECT/flow-server',
+          googlePlay: '',
+          appStore: '',
+          demo: '',
+        },
+      },
     ],
   },
 };
