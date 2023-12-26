@@ -26,8 +26,6 @@ board 도메인에서 게시물을 생성하는 테스트 코드를 @WebMvcTest�
 ```
 
 ## Type
-
-- gitmoji를 사용하여 어떤 타입인지 명확하게 표시해주세요.
 - 메세지 타입은 반드시 소문자를 사용해주세요.
 
 | Type | Description |
