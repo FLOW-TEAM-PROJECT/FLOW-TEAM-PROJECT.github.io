@@ -9,6 +9,7 @@ categories: Backend
 
 본 포스팅에서는 프로젝트에서 구현한  사용자 인증 및 인가 구현 과정을 살펴보고자 합니다.  
 이를 통해 회원가입, 로그인, 로그아웃 기능을 구현하였습니다.
+<br>
 
 ## Spring Security 동작 방식  
 스프링 시큐리티는 애플리케이션에서 인증/인가에 대한 설정을 편리하게 할 수 있도록 도와줍니다.  
@@ -30,6 +31,7 @@ categories: Backend
 - 시큐리티가 제공하는 요소로, 보안 필터들의 집합이라고 할 수 있습니다.
 - DelegatingFilterChainProxy 를 통해 전달받은 요청을 FilterChainProxy에 의해 처리되고 이 과정에서 인증(Authentication), 인가(Authorization) 검사를 수행합니다.
 
+<br>
 <br>
 
 ## 인증/인가
@@ -103,8 +105,9 @@ securityFilterChain() 메서드에서 HttpSecurity 객체를 통해 여러 보�
 제가 정의한 JwtAuthenticationFilter는 사용자의 JWT 토큰을 검증해 인증 과정을 처리하고,  
 JWTAuthorizationFilter는 사용자가 요청한 자원에 대한 접근 권한을 확인하는 역할을 합니다.  
 
+<br>
 
-## JwtAuthenticationFilter
+### JwtAuthenticationFilter
 - UsernamePasswordAuthenticationFilter를 확장하여 JWT 기반의 인증 로직을 구현한 커스텀 필터입니다.
 - 로그인 요청 처리와 인증 성공 처리, 인증 실패 처리를 담당합니다.
 
@@ -116,6 +119,8 @@ public JwtAuthenticationFilter(RefreshTokenRepository refreshTokenRepository, Me
 }
 ```
 /api/login 호출 시 실행되도록 설정했습니다.
+
+<br>
 
 ### 로그인 요청 처리
 ```java
@@ -165,7 +170,7 @@ protected void successfulAuthentication(HttpServletRequest request, HttpServletR
 
 인증 성공 시 호출되는 메서드로, 인증된 사용자 정보를 가지고 리프레시 토큰을 생성, DB에 저장합니다.  
 엑세스 토큰을 생성하고 클라이언트에게 로그인 성공(200) 응답과 함께 엑세스 토큰을 반환합니다.  
-
+<br>
 ### 인증 실패 처리 
 ```java
 @Override
@@ -175,8 +180,9 @@ protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServle
 }
 ```
 인증이 실패했을 때 호출되는 메서드로, 인증 실패에 대한 오류를 응답으로 반환합니다.
+<br>
 
-## JwtAuthenticationProvider
+### JwtAuthenticationProvider
 AuthenticationProvider 를 커스텀하게 구현한 클래스입니다
 
 ```java
@@ -243,8 +249,9 @@ public class CustomMemberDetails implements UserDetails {
     }
 }
 ```
+<br>
 
-## CustomMemberDeatilsService
+### CustomMemberDeatilsService
 ```java
 @Service
 @RequiredArgsConstructor
@@ -266,7 +273,7 @@ Member의 provider 필드는 소셜로그인 시에 같이 쓰이는 값입니�
 
 loadUserByUsername()으로 UserDetails 객체를 반환합니다. (여기서는 CustomMemberDetails)  
 
-## JwtAuthorizationFilter
+### JwtAuthorizationFilter
 시큐리티의 BasicAuthenticationFilter를 상속받아 특정 요청에 대해 JWT 기반의 인증 및 인가를 수행하는 필터입니다.
 
 (너무 길어서 코드는 뺐습니다..!)
@@ -279,7 +286,9 @@ loadUserByUsername()으로 UserDetails 객체를 반환합니다. (여기서는 
 - 사용자 인증 정보를 SecurityContextHolder에 저장합니다.
 
 엑세스 토큰의 유효성을 검사하고 만료된 경우, 엑세스 토큰을 재발급합니다.  
-<br><br>
+<br>
+<br>
+
 ## 느낀 점  
 스프링 시큐리티의 동작 원리를 배워 실제로 적용해 보았습니다.  
 그동안 개발 과정에서 보안을 등한시 했던 게 아닌지 반성하였고, 시프링 시큐리티를 통해 필터에서 보안 관련 처리를 하여 인증/인가 과정을 대략적으로 알 수 있었습니다.
