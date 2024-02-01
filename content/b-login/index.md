@@ -10,6 +10,9 @@ categories: Backend
 본 포스팅에서는 프로젝트에서 구현한  사용자 인증 및 인가 구현 과정을 살펴보고자 합니다.  
 이를 통해 회원가입, 로그인, 로그아웃 기능을 구현하였습니다.
 <br>
+<br>
+<br>
+
 
 ## Spring Security 동작 방식  
 스프링 시큐리티는 애플리케이션에서 인증/인가에 대한 설정을 편리하게 할 수 있도록 도와줍니다.  
@@ -39,17 +42,18 @@ categories: Backend
 Spring-Security를 통해서 다음과 같은 필터들을 만들고 이를 ServletFilterChain 에 포함시켰습니다.  
 - JwtAuthenticationFilter
 - JwtAuthorizationFilter
-
+<br> 
 스프링 시큐리티는 SecurityFilterChain 클래스를 Bean 으로 등록만 시켜준다면 하면 알아서  
 DelegatingFilterProxy 에 ServletFilterChain 에 포함시켜줍니다.
 <br>
 
 ![인증흐름요약](https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/33bccd66-5aac-4ab9-910d-59387ae713f5)
 
+
 인증 흐름을 정리하자면 다음과 같습니다.
 
 - 사용자가 id, password를 입력해 로그인을 진행한다 -> 인증 시도
-- AuthenticationFilter 에서 UsernamePasswordAuthenticationToken 이라는 인증 객체를 만들어, AuthenticationManager에게 위임한다. (이름이 무척 길다)
+- AuthenticationFilter 에서 Username~Token 인증 객체를 만들어, AuthenticationManager에게 준다. (토큰 이름이 무척 길다)
 - AuthenticationManager는 다시 AuthenticationProvider 에게 인증을 위임하고,  AuthenticationProvider는 UserDetailsService의 loadUserByUsername() 메서드를 통해 UserDetails 객체를 반환받는다.
 - 인증 성공 시(id,pw가 일치했다면), AuthenticationFilter는 successfulAuthentication()을 호출해 SecurityContext에 위의 이름 긴 UsernamePasswordAuthenticationToken 객체를 담는다.
 - 인증이 실패할 경우 unsuccessfulAuthentication() 호출, exceptionHandler를 실행한다.
@@ -66,6 +70,7 @@ DelegatingFilterProxy 에 ServletFilterChain 에 포함시켜줍니다.
 <br>
 
 또한 SecurityConfig 클래스를 정의해, Spring-Security의 설정을 구성했습니다.  
+
 서블릿 필터의 체인의 일부로 등록되어 시큐리티의 FilterChainProxy에 영향을 미치도록 했습니다.  
 
 ```java
@@ -97,15 +102,16 @@ public class SecurityConfig {
     }
 ```
 
+
 securityFilterChain() 메서드에서 HttpSecurity 객체를 통해 여러 보안 설정을 해주었습니다.
 
 이 메서드 내에서 정의된 설정에 따라 FilterChainProxy에 필터가 추가해주었습니다.
 
 
-제가 정의한 JwtAuthenticationFilter는 사용자의 JWT 토큰을 검증해 인증 과정을 처리하고,  
-JWTAuthorizationFilter는 사용자가 요청한 자원에 대한 접근 권한을 확인하는 역할을 합니다.  
+- JwtAuthenticationFilter는 사용자의 JWT 토큰을 검증해 인증 과정을 처리합니다.
+- JWTAuthorizationFilter는 사용자가 요청한 자원에 대한 접근 권한을 확인하는 역할을 합니다.
 
-<br>
+<br> <br> 
 
 ### JwtAuthenticationFilter
 - UsernamePasswordAuthenticationFilter를 확장하여 JWT 기반의 인증 로직을 구현한 커스텀 필터입니다.
@@ -144,8 +150,10 @@ public Authentication attemptAuthentication(HttpServletRequest request, HttpServ
 ```
 사용자의 로그인 요청을 처리하는 메서드입니다.  
 사용자가 입력한  id, pw를 담아 UsernamePasswordAuthentication 객체를 생성합니다.  
+
 생성된 인증 토큰은 AuthenticationManager 에게 전달되어 넘깁니다.  
 
+<br> 
 
 ### 인증 성공 처리
 ```java
@@ -170,7 +178,9 @@ protected void successfulAuthentication(HttpServletRequest request, HttpServletR
 
 인증 성공 시 호출되는 메서드로, 인증된 사용자 정보를 가지고 리프레시 토큰을 생성, DB에 저장합니다.  
 엑세스 토큰을 생성하고 클라이언트에게 로그인 성공(200) 응답과 함께 엑세스 토큰을 반환합니다.  
-<br>
+
+<br> 
+
 ### 인증 실패 처리 
 ```java
 @Override
@@ -180,7 +190,7 @@ protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServle
 }
 ```
 인증이 실패했을 때 호출되는 메서드로, 인증 실패에 대한 오류를 응답으로 반환합니다.
-<br>
+<br> <br> 
 
 ### JwtAuthenticationProvider
 AuthenticationProvider 를 커스텀하게 구현한 클래스입니다
@@ -227,7 +237,7 @@ AuthenticationFilter -> AuthenticationManager -> AuthenticationProvider로 인�
 Security 에서 다루는 유저 정보(UserDetails)와 실제 Domain Entity 사이에 차이가 있기 때문에,  
 UserDetails 를 구현한 클래스를 다음과 같이 정의해줍니다.  
 
-## CustomMemberDetails
+### CustomMemberDetails
 ```java
 @Getter
 public class CustomMemberDetails implements UserDetails {
@@ -268,17 +278,19 @@ public class CustomMemberDetailsService implements UserDetailsService {
 ```
 
 Member의 provider 필드는 소셜로그인 시에 같이 쓰이는 값입니다. ("naver", "google"....)  
+
 이메일은 겹칠 수 있기 때문에 user.findByEmail()은 쓰면 안 됩니다. Provider 값도 함께 확인하는 작업이 필수!  
 
 
 loadUserByUsername()으로 UserDetails 객체를 반환합니다. (여기서는 CustomMemberDetails)  
+<br> <br> 
 
 ### JwtAuthorizationFilter
 시큐리티의 BasicAuthenticationFilter를 상속받아 특정 요청에 대해 JWT 기반의 인증 및 인가를 수행하는 필터입니다.
-
 (너무 길어서 코드는 뺐습니다..!)
 
-기능  
+
+#### 기능  
 - 예외 URL 확인 : 특정 URL 패턴을 인증 과정에서 제외합니다.
 - 엑세스 토큰 확인 : 요청 헤더(Authorization) 에서 엑세스 토큰을 추출합니다.
 - 추출한 엑세스 토큰의 유효성을 검사합니다. 만료되었거나 잘못된 형식인 경우에는 오류를 발생시킵니다.
@@ -289,7 +301,7 @@ loadUserByUsername()으로 UserDetails 객체를 반환합니다. (여기서는 
 <br>
 <br>
 
-## 느낀 점  
+### 느낀 점  
 스프링 시큐리티의 동작 원리를 배워 실제로 적용해 보았습니다.  
 그동안 개발 과정에서 보안을 등한시 했던 게 아닌지 반성하였고, 시프링 시큐리티를 통해 필터에서 보안 관련 처리를 하여 인증/인가 과정을 대략적으로 알 수 있었습니다.
 
