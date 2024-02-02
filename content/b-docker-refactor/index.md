@@ -9,11 +9,11 @@ categories: DevOps
 일반적으로 Spring Boot 애플리케이션을 Docker를 이용해 배포할 경우 아래와 같이 작성한다.
 
 ```docker
-FROM eclipse-temurin:17-jdk-alpine
-VOLUME /tmp
-ARG JAR_FILE
+FROM openjdk:11-jdk
+ARG JAR_FILE=./build/libs/*-SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+EXPOSE 8080
+ENTRYPOINT [ "java", "-jar", "/app.jar" ]
 ```
 
 그러나 위와 같이 Docker 이미지를 만드는 것은 상당히 비효율적이다.
@@ -119,13 +119,28 @@ ENTRYPOINT ["java", "-Dspring.profiles.active=dev", "-Duser.timezone=Asia/Seoul"
 
 기존 방식에서 jar 파일을 통째로 COPY하는 과정을 제외하고, 자동화 배포 시 layer를 분리하여 해당 레이어들만 복사하는 방식으로 변형하였다.
 
+실행 스크립트도 다음과 같이 수정했다.
+
+```bash
+#!/bin/bash
+source ../.env
+
+git submodule update --remote --recursive --init
+cd ..
+./gradlew clean build
+cd api-module
+java -Djarmode=layertools -jar build/libs/${JAR_NAME} extract   # 해당 부분 추가
+cd ..
+docker-compose up -d --build
+```
+
 배포 GitHub Actions에는 아래와 같이 jar 파일을 분리하는 명령을 추가했다.
 
 ```yaml
 - name: Build Docker & push
   run: |
     cd ./api-module
-    **java -Djarmode=layertools -jar build/libs/${{ secrets.JAR_NAME }} extract**
+    java -Djarmode=layertools -jar build/libs/${{ secrets.JAR_NAME }} extract   # 해당 부분 추가
     docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
     docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:server-dev-blue .
     docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:server-dev-green .
