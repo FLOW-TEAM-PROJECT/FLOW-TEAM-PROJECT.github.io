@@ -38,12 +38,16 @@ categories: Backend
 다음은 프로젝트에서 엑세스 토큰을 생성하는 JwtUtil 클래스의 일부입니다.
 
 
-<img width="790" alt="스크린샷 2024-02-02 오전 8 36 07" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/89bfe82d-dae1-4720-9ed5-e3601090c5af">
+<img width="790" alt="스크린샷 2024-02-02 오전 8 36 07" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/89bfe82d-dae1-4720-9ed5-e3601090c5af">  
+<br> <br>
 
 
-<img width="695" alt="스크린샷 2024-02-02 오전 8 36 27" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/cfba84b7-30bb-4a16-adf4-31f3a271758c">
+<img width="695" alt="스크린샷 2024-02-02 오전 8 36 27" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/cfba84b7-30bb-4a16-adf4-31f3a271758c">  
+<br> <br>
 
-<img width="788" alt="스크린샷 2024-02-02 오전 8 37 17" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/51fc1ae8-79fb-43d3-a912-eea89883f743">
+
+<img width="788" alt="스크린샷 2024-02-02 오전 8 37 17" src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/56336436/51fc1ae8-79fb-43d3-a912-eea89883f743">  
+
 
 Secret-Key는 서버에서만 보관하여, 대칭키 암호화 방식을 통해 서명을 생성합니다.
 
