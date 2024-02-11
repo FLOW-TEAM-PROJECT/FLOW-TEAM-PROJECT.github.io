@@ -75,7 +75,7 @@
 </li>
 <li>
 <p>OFFSET의 경우 앞에서 읽었던 행을 다시 읽기 때문에, 페이지 번호가 뒤로 갈수록 더욱 느려진다는 문제점이 있다.</p>
-<p><img src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/96467030/95fb2aa8-b1c8-47ac-afd6-bde431f31058" alt="image"></p>
+<p><img src="https://github.com/devridge-team-project/devridge-team-project.github.io/assets/96467030/451cea3e-adbd-474b-9f00-9adcb337a5c3" alt="image"></p>
 <p><a href="https://jojoldu.tistory.com/528">https://jojoldu.tistory.com/528</a></p>
 <ul>
 <li>만약 OFFSET이 1000이고, LIMIT이 10일 경우, 1,000부터 10개를 읽어야 하기 때문에 1,010개의 데이터를 읽는다.</li>
@@ -116,7 +116,7 @@
 <li>
 <p>Service 코드를 아래와 같이 수정한다.</p>
 <div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Transactional</span><span class="token punctuation">(</span>readOnly <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllQnAResponse</span><span class="token punctuation">></span></span> <span class="token function">getAllQnASort</span><span class="token punctuation">(</span><span class="token class-name">String</span> sortOption<span class="token punctuation">,</span> <span class="token class-name">Long</span> lastIndex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllQnAResponse</span><span class="token punctuation">></span></span> <span class="token function">getAllQnA</span><span class="token punctuation">(</span><span class="token class-name">String</span> sortOption<span class="token punctuation">,</span> <span class="token class-name">Long</span> lastIndex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token comment">// TODO: 추후 24시 기준으로 업데이트</span>
     <span class="token keyword">if</span> <span class="token punctuation">(</span>sortOption<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"views"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
         <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnASortByViews</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -128,6 +128,33 @@
 
     <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnASortByLatest</span><span class="token punctuation">(</span>lastIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span></code></pre></div>
+<ul>
+<li>
+<p>[추가] 댓글 무한 스크롤을 구현하던 중 <strong>처음 요청을 보낼 땐 가장 최근의 게시글 id를 찾아주는 것이 좋을 것</strong> 같아 아래와 같이 수정했다.</p>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token comment">// Service</span>
+<span class="token annotation punctuation">@Transactional</span><span class="token punctuation">(</span>readOnly <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllQnAResponse</span><span class="token punctuation">></span></span> <span class="token function">getAllQnA</span><span class="token punctuation">(</span><span class="token class-name">String</span> sortOption<span class="token punctuation">,</span> <span class="token class-name">Long</span> lastIndex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// TODO: 추후 24시 기준으로 업데이트</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>sortOption<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"views"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnASortByViews</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lastIndex <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token class-name">Long</span> maxId <span class="token operator">=</span> qnaRepository<span class="token punctuation">.</span><span class="token function">findMaxId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token number">0L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnASortByLatest</span><span class="token punctuation">(</span>maxId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnASortByLatest</span><span class="token punctuation">(</span>lastIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// Repository</span>
+<span class="token annotation punctuation">@Query</span><span class="token punctuation">(</span>
+    value <span class="token operator">=</span> <span class="token string">"SELECT MAX(id) "</span> <span class="token operator">+</span>
+            <span class="token string">"FROM QnA"</span>
+<span class="token punctuation">)</span>
+<span class="token class-name">Optional</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> <span class="token function">findMaxId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre></div>
+</li>
+</ul>
 </li>
 <li>
 <p>QueryDsl을 아래와 같이 수정한다.</p>
@@ -159,7 +186,7 @@
 </li>
 </ol>
 <p>위 코드의 결과는 아래와 같다.</p>
-<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">POST /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
 
 <span class="token punctuation">[</span>
     <span class="token punctuation">{</span>
@@ -186,62 +213,7 @@
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-24T10:58:35"</span>
     <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">154</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"xxxxxxxxxxxxxx"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-26T15:23:32"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">155</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"xxxxxxxxxxxxxx"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-26T16:38:18"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">156</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"코딩이 정말 재미있네요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-28T01:32:30"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">157</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"낮잠을 너무 많이 잤어요 ㅋㅋㅋㅋㅋㅋ"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-08T19:15:49"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">158</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"감자튀김 먹고싶어요...."</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-08T20:21:42"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">159</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"감자튀김 먹고싶어요...."</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-08T20:24:11"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">160</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"감자튀김 먹고싶어요...."</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-08T20:24:50"</span>
-    <span class="token punctuation">}</span>
+...
 <span class="token punctuation">]</span></code></pre></div>
 <ul>
 <li>id순으로 정렬되어 응답이 이루어지긴 했지만 최신순으로 응답이 온 것은 아니었다.</li>
@@ -273,12 +245,12 @@
 <li><code class="language-text">orderBy(id.desc())</code>를 추가로 걸어두어 가장 큰 아이디(최신 insert된 게시물) 순서로 정렬되어 10개씩 가져오도록 했다.</li>
 </ul>
 <p>위 코드의 결과는 아래와 같다.</p>
-<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">POST /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
 
 <span class="token punctuation">[</span>
     <span class="token punctuation">{</span>
         <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">184</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"새해복 많이 받으세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"JDK 17과 Spring Boot"</span><span class="token punctuation">,</span>
         <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
@@ -286,7 +258,7 @@
     <span class="token punctuation">}</span><span class="token punctuation">,</span>
     <span class="token punctuation">{</span>
         <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">183</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"asdfasdf"</span><span class="token punctuation">,</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"JDK 17과 Spring Boot"</span><span class="token punctuation">,</span>
         <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
@@ -300,65 +272,10 @@
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">10</span><span class="token punctuation">,</span>
         <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:16:26"</span>
     <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">181</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:08"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">180</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:08"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">179</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:07"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">178</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:07"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">177</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:07"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">176</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:07"</span>
-    <span class="token punctuation">}</span><span class="token punctuation">,</span>
-    <span class="token punctuation">{</span>
-        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">175</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
-        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-09T22:10:06"</span>
-    <span class="token punctuation">}</span>
+...
 <span class="token punctuation">]</span></code></pre></div>
 <ul>
-<li>lastIndex가 어떤 값이든 항상 같은 값을 반환한다.</li>
+<li><strong>lastIndex가 어떤 값이든 항상 같은 값을 반환하는 문제가 발생한다.</strong></li>
 <li>lastIndex보다 큰 값이면 상관없었기 때문에 <code class="language-text">ORDER BY DESC</code>로 인해 가장 큰 ID부터 불러왔기 때문이다.</li>
 </ul>
 <h3 id="3차-수정" style="position:relative;"><a href="#3%EC%B0%A8-%EC%88%98%EC%A0%95" aria-label="3차 수정 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>3차 수정</h3>
@@ -385,11 +302,11 @@
         <span class="token punctuation">.</span><span class="token function">fetch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span></code></pre></div>
 <ul>
-<li>lastIndex 10, 20, 30, … 으로 받아오도록 설정했다.</li>
+<li>lastIndex를 10, 20, 30, … 으로 받아오도록 설정했다.</li>
 <li><code class="language-text">ORDER BY DESC</code>로 정렬한 후, lastIndex보다 작거나 같은 index 값을 가진 게시물을 10개까지만 가져온다.</li>
 </ul>
 <p>위 코드의 결과는 아래와 같다.</p>
-<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">POST /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna?sortOption=latest&amp;lastIndex=<span class="token number">150</span>
 
 <span class="token punctuation">[</span>
     <span class="token punctuation">{</span>
@@ -458,7 +375,7 @@
     <span class="token punctuation">}</span><span class="token punctuation">,</span>
     <span class="token punctuation">{</span>
         <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">140</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"고구마 피자가 웬말이냐"</span><span class="token punctuation">,</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"고구마 피자와 감자 피자"</span><span class="token punctuation">,</span>
         <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
@@ -466,7 +383,7 @@
     <span class="token punctuation">}</span><span class="token punctuation">,</span>
     <span class="token punctuation">{</span>
         <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">139</span><span class="token punctuation">,</span>
-        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"고구마 피자가 웬말이냐"</span><span class="token punctuation">,</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"고구마 피자와 감자 피자"</span><span class="token punctuation">,</span>
         <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"views"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token property">"commentCount"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
@@ -474,6 +391,279 @@
     <span class="token punctuation">}</span>
 <span class="token punctuation">]</span></code></pre></div>
 <p>최신순으로 잘 정렬된 것을 볼 수 있다.</p>
+<h2 id="추가-댓글-무한-스크롤-구현하기" style="position:relative;"><a href="#%EC%B6%94%EA%B0%80-%EB%8C%93%EA%B8%80-%EB%AC%B4%ED%95%9C-%EC%8A%A4%ED%81%AC%EB%A1%A4-%EA%B5%AC%ED%98%84%ED%95%98%EA%B8%B0" aria-label="추가 댓글 무한 스크롤 구현하기 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>[추가] 댓글 무한 스크롤 구현하기</h2>
+<ul>
+<li>댓글의 경우 <strong>해당 Q&#x26;A에 있는 댓글들을 불러와야 하기 때문에 id로 순차 정렬하여 가져올 수 없다.</strong></li>
+<li>이 경우 Q&#x26;A처럼 lastIndex를 받아오면 원하는 값을 불러오기 어려울 것이다.</li>
+</ul>
+<h3 id="고려-사항" style="position:relative;"><a href="#%EA%B3%A0%EB%A0%A4-%EC%82%AC%ED%95%AD" aria-label="고려 사항 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>고려 사항</h3>
+<ol>
+<li>Q&#x26;A를 넘겨줄 때 가장 큰 commentId를 기준으로 댓글 10개를 불러온다.</li>
+<li>이후 스크롤 시 가장 작은 id를 기준으로 재요청하도록 한다.</li>
+</ol>
+<h3 id="1차-구현" style="position:relative;"><a href="#1%EC%B0%A8-%EA%B5%AC%ED%98%84" aria-label="1차 구현 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>1차 구현</h3>
+<ol>
+<li>
+<p>처음 요청을 보낼 땐 해당 게시글 댓글의 최대 id값을 알 수 없기 때문에 lastIndex를 보내지 않는다.</p>
+</li>
+<li>
+<p>위와 같이 처리했을 때 lastIndex가 없는 경우 자동으로 가장 큰 아이디 값을 찾아주도록 코드를 작성했다.</p>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">></span></span> <span class="token function">getAllQnACommentByQnAId</span><span class="token punctuation">(</span><span class="token class-name">Long</span> lastIndex<span class="token punctuation">,</span> <span class="token class-name">Long</span> qnaId<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	<span class="token class-name">QnA</span> qna <span class="token operator">=</span> <span class="token function">getQnA</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>lastIndex <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	    <span class="token comment">// TODO: 해당 게시글에 댓글이 없는 경우 확인</span>
+	    <span class="token class-name">Long</span> lastIndexByQnAId <span class="token operator">=</span> qnaCommentRepository<span class="token punctuation">.</span><span class="token function">findMaxIdByQnAId</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	    <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndexByQnAId<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+	
+	<span class="token comment">// TODO: 탈퇴된 멤버 처리 확인</span>
+	<span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndex<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre></div>
+</li>
+</ol>
+<p>결과는 아래와 같다.</p>
+<ol>
+<li>
+<p>댓글이 있는 경우</p>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna/<span class="token number">162</span>/comments
+
+<span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">180</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">188</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임304"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"http://abc.abc"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:18"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">179</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">188</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임304"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"http://abc.abc"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:17"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">178</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">188</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임304"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"http://abc.abc"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:16"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+...
+<span class="token punctuation">]</span></code></pre></div>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna/<span class="token number">162</span>/comments?lastIndex=<span class="token number">171</span>
+
+<span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">171</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">188</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임304"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"http://abc.abc"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:08"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">143</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">188</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임304"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"http://abc.abc"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"감사합니다"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-08T23:57:59"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">]</span></code></pre></div>
+</li>
+</ol>
+<p>그러나…<strong>댓글이 없는 게시글인 경우에는 500 에러가 발생한다…!</strong></p>
+<h3 id="2차-수정-1" style="position:relative;"><a href="#2%EC%B0%A8-%EC%88%98%EC%A0%95-1" aria-label="2차 수정 1 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>2차 수정</h3>
+<ul>
+<li>
+<p>500오류의 원인은 단순 NPE 문제였다.</p>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">ERROR <span class="token number">2024</span><span class="token number">-02</span><span class="token number">-11</span> <span class="token number">23</span><span class="token operator">:</span><span class="token number">43</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">[</span>http-nio<span class="token number">-8080</span>-exec<span class="token number">-5</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">[</span>dispatcherServlet<span class="token punctuation">]</span><span class="token operator">:</span><span class="token number">175</span><span class="token punctuation">]</span> - Servlet.service() for servlet <span class="token punctuation">[</span>dispatcherServlet<span class="token punctuation">]</span> in context with path <span class="token punctuation">[</span><span class="token punctuation">]</span> threw exception <span class="token punctuation">[</span>Request processing failed; nested exception is java.lang.NullPointerException<span class="token punctuation">]</span> with root cause
+java.lang.NullPointerException<span class="token operator">:</span> <span class="token null keyword">null</span></code></pre></div>
+<ul>
+<li>comment가 없는 경우 maxId의 결과값이 null이기 때문에 발생한 문제인 듯 했다.</li>
+</ul>
+</li>
+<li>
+<p>아래와 같이 코드를 수정하면 댓글이 없는 경우 빈 배열을 반환한다.</p>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token comment">// Service 로직</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">></span></span> <span class="token function">getAllQnACommentByQnAId</span><span class="token punctuation">(</span><span class="token class-name">Long</span> lastIndex<span class="token punctuation">,</span> <span class="token class-name">Long</span> qnaId<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">QnA</span> qna <span class="token operator">=</span> <span class="token function">getQnA</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lastIndex <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				<span class="token comment">// fix: 결과가 null인 경우 0L</span>
+        <span class="token class-name">Long</span> lastIndexByQnAId <span class="token operator">=</span> qnaCommentRepository<span class="token punctuation">.</span><span class="token function">findMaxIdByQnAId</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token number">0L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndexByQnAId<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// TODO: 탈퇴된 멤버 처리 확인</span>
+    <span class="token keyword">return</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndex<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre></div>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token comment">// Repository</span>
+<span class="token annotation punctuation">@Query</span><span class="token punctuation">(</span>
+    value <span class="token operator">=</span> <span class="token string">"SELECT MAX(id) "</span> <span class="token operator">+</span>
+            <span class="token string">"FROM QnAComment "</span> <span class="token operator">+</span>
+            <span class="token string">"WHERE qna.id = :qnaId"</span>
+<span class="token punctuation">)</span>
+<span class="token class-name">Optional</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> <span class="token function">findMaxIdByQnAId</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Param</span><span class="token punctuation">(</span><span class="token string">"qnaId"</span><span class="token punctuation">)</span> <span class="token class-name">Long</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre></div>
+<ul>
+<li>위 쿼리는 가장 최근에 작성된 댓글 아이디를 찾아준다.</li>
+</ul>
+</li>
+</ul>
+<p>실행 결과는 아래와 같다. (댓글이 없는 게시물인 경우)</p>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">GET /api/qna/<span class="token number">150</span>/comments
+
+<span class="token punctuation">[</span><span class="token punctuation">]</span></code></pre></div>
+<h3 id="3차-수정-1" style="position:relative;"><a href="#3%EC%B0%A8-%EC%88%98%EC%A0%95-1" aria-label="3차 수정 1 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>3차 수정</h3>
+<p>추가적으로 탈퇴한 회원이 작성한 댓글 정보를 받아오지 못하는 것 같아 아래와 같이 수정하였다.</p>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token comment">// Service 로직</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">></span></span> <span class="token function">getAllQnACommentByQnAId</span><span class="token punctuation">(</span><span class="token class-name">Long</span> lastIndex<span class="token punctuation">,</span> <span class="token class-name">Long</span> qnaId<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">QnA</span> qna <span class="token operator">=</span> <span class="token function">getQnA</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lastIndex <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token class-name">Long</span> lastIndexByQnAId <span class="token operator">=</span> qnaCommentRepository<span class="token punctuation">.</span><span class="token function">findMaxIdByQnAId</span><span class="token punctuation">(</span>qnaId<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token number">0L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">QnAComment</span><span class="token punctuation">></span></span> comments <span class="token operator">=</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndexByQnAId<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> qnaCommentMapper<span class="token punctuation">.</span><span class="token function">toQnAComments</span><span class="token punctuation">(</span>comments<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">QnAComment</span><span class="token punctuation">></span></span> comments <span class="token operator">=</span> qnaQuerydslRepository<span class="token punctuation">.</span><span class="token function">findAllQnAComment</span><span class="token punctuation">(</span>lastIndex<span class="token punctuation">,</span> qnaId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> qnaCommentMapper<span class="token punctuation">.</span><span class="token function">toQnAComments</span><span class="token punctuation">(</span>comments<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre></div>
+<div class="gatsby-highlight" data-language="java"><pre class="language-java"><code class="language-java"><span class="token comment">// Mapper 로직</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">></span></span> <span class="token function">toQnAComments</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">QnAComment</span><span class="token punctuation">></span></span> comments<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">></span></span> result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">QnAComment</span> comment <span class="token operator">:</span> comments<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        result<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>
+            <span class="token class-name">GetAllCommentByQnAId</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">id</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">member</span><span class="token punctuation">(</span><span class="token function">toMember</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getMember</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">content</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getContent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">likes</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getLikes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">dislikes</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getDislikes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">createdAt</span><span class="token punctuation">(</span>comment<span class="token punctuation">.</span><span class="token function">getCreatedAt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre></div>
+<p>결과:</p>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json"><span class="token comment">// 탈퇴한 사용자 댓글 응답</span>
+<span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">180</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"default_user.png"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:18"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">179</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"default_user.png"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:17"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">178</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"default_user.png"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:16"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">177</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token string">"default_user.png"</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"탈퇴한 사용자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"안녕하세요"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-02-11T22:00:15"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+...
+<span class="token punctuation">]</span></code></pre></div>
+<div class="gatsby-highlight" data-language="json"><pre class="language-json"><code class="language-json">탈퇴하지 않은 사용자 댓글 응답
+<span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">135</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">146</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임10"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token null keyword">null</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"반갑습니다."</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-19T03:23:09"</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+        <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">134</span><span class="token punctuation">,</span>
+        <span class="token property">"member"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+            <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">146</span><span class="token punctuation">,</span>
+            <span class="token property">"nickname"</span><span class="token operator">:</span> <span class="token string">"닉네임10"</span><span class="token punctuation">,</span>
+            <span class="token property">"profileImageUrl"</span><span class="token operator">:</span> <span class="token null keyword">null</span><span class="token punctuation">,</span>
+            <span class="token property">"introduction"</span><span class="token operator">:</span> <span class="token string">"성장하는 개발자입니다."</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token property">"content"</span><span class="token operator">:</span> <span class="token string">"성장합니다......"</span><span class="token punctuation">,</span>
+        <span class="token property">"likes"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+        <span class="token property">"dislikes"</span><span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token property">"createdAt"</span><span class="token operator">:</span> <span class="token string">"2024-01-19T03:08:17"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">]</span></code></pre></div>
 <h2 id="참고-자료" style="position:relative;"><a href="#%EC%B0%B8%EA%B3%A0-%EC%9E%90%EB%A3%8C" aria-label="참고 자료 permalink" class="anchor before"><svg aria-hidden="true" focusable="false" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>참고 자료</h2>
 <ul>
 <li><a href="https://thalals.tistory.com/350">https://thalals.tistory.com/350</a></li>
